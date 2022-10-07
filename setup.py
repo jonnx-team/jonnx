@@ -33,6 +33,7 @@ setuptools.setup(
         'pyyaml',
         'tensorflow',
         'tensorstore >= 0.1.20',
+        'equinox',
     ],
     extras_require={
         'test': ['pytest'],
