@@ -46,6 +46,8 @@ class RegistryClassTest(absltest.TestCase):
     self.assertLen(r, 1)
     r["b"] = lambda: 4
     self.assertLen(r, 2)
+    r.deregister("b")
+    self.assertLen(r, 1)
 
   def testTransformer(self):
     r = registry.Registry(
