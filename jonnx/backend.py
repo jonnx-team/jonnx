@@ -15,20 +15,6 @@ from onnx.backend.base import BackendRep
 def _asarray(proto):
   return numpy_helper.to_array(proto).reshape(tuple(proto.dims))
 
-
-attr_types = dict(onnx.AttributeProto.AttributeType.items())  # type: ignore
-attribute_handlers = {
-    attr_types['FLOAT']: lambda a: a.f,
-    attr_types['INT']: lambda a: a.i,
-    attr_types['STRING']: lambda a: a.s,
-    attr_types['TENSOR']: lambda a: _asarray(a.t),
-    attr_types['FLOATS']: lambda a: a.floats,
-    attr_types['INTS']: lambda a: a.ints,
-    attr_types['STRINGS']: lambda a: a.strings,
-    attr_types['TENSORS']: lambda a: [_asarray(x) for x in a.tensors],
-}
-
-
 class JaxBackendRep(BackendRep):
   """the handle that preparing to execut a model repeatedly.
 
@@ -51,7 +37,7 @@ class JaxBackendRep(BackendRep):
                   **{n.name: _asarray(n) for n in model.graph.initializer})
       for node in model.graph.node:
         args = (vals[name] for name in node.input)
-        attrs = {a.name: attribute_handlers[a.type](a) for a in node.attribute}
+        attrs = {a.name: helper.get_attribute_value(a) for a in node.attribute}
         outputs = registry.op(node.op_type)(
             *args, __output__=node.output, **attrs)
         for name, output in zip(node.output, outputs):
