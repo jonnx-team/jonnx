@@ -7,7 +7,42 @@ import dataclasses
 import functools as ft
 import inspect
 
+from jax import numpy as jnp
 import jax.tree_util as jtu
+from jaxtyping.pytree_type import PyTree
+import numpy as np
+
+
+def tree_equal(*pytrees: PyTree):
+  """Returns `True` if all input PyTrees are equal."""
+  if len(pytrees) < 2:
+    raise RuntimeError("tree_equal need at least 2 pytrees inputs.")
+  flat, treedef = jtu.tree_flatten(pytrees[0])
+  array_types = (jnp.ndarray, np.ndarray)
+  out = True
+  for pytree in pytrees[1:]:
+    flat_, treedef_ = jtu.tree_flatten(pytree)
+    if treedef_ != treedef:
+      return False
+    for elem, elem_ in zip(flat, flat_):
+      if isinstance(elem, array_types):
+        if isinstance(elem_, array_types):
+          if (isinstance(elem, type(elem_)) or (elem.shape != elem_.shape) or
+              (elem.dtype != elem_.dtype)):
+            return False
+          allsame = (elem == elem_).all()
+          if not allsame:
+            return False
+          out = out & allsame
+        else:
+          return False
+      else:
+        if isinstance(elem_, array_types):
+          return False
+        else:
+          if elem != elem_:
+            return False
+  return out
 
 
 def static_field(**kwargs):
@@ -224,6 +259,9 @@ class Module(metaclass=_ModuleMeta):
     for name, value in zip(static_field_names, static_field_values):
       object.__setattr__(self, name, value)
     return self
+  
+  def __eq__(self, other):
+    return tree_equal(self, other)
 
 
 def module_update_wrapper(wrapper: Module, wrapped) -> Module:
