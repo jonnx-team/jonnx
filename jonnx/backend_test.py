@@ -9,7 +9,7 @@ import onnx
 
 
 @registry.register_op('Relu')
-def relu(x):
+def relu(x, **kwargs):
   return [jnp.maximum(x, 0)]
 
 

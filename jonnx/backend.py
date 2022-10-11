@@ -2,7 +2,7 @@
 from typing import Any
 
 import jax
-from jonnx.core import Graph
+from jonnx.core import graph
 from jonnx.utils import registry
 import onnx
 from onnx import helper
@@ -38,7 +38,7 @@ class JaxBackendRep(BackendRep):
 
   def __init__(self, model=None):
     super(JaxBackendRep, self).__init__()
-    g = Graph(model.graph)
+    g = graph.Graph(model.graph)
     new_graph_proto = g.export()
     self.model = helper.make_model(new_graph_proto)
 

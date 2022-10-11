@@ -3,7 +3,7 @@ import dataclasses
 from typing import Dict, List
 
 from absl.testing import absltest
-from jonnx.ops import module
+from jonnx.core import module
 
 
 class GraphTest(absltest.TestCase):

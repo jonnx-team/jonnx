@@ -1,2 +1,3 @@
 """jonnx.core library."""
-from .graph import Graph
+from . import module
+from . import graph
