@@ -2,6 +2,7 @@
 from typing import Dict, Text, List
 
 from onnx import GraphProto
+from onnx import helper
 
 
 class Graph:
@@ -65,7 +66,8 @@ class Graph:
     outputs = self.node_down_to_tensor_dict[node_name]
     results = []
     for output_ in outputs:
-      results.extend(self.tensor_down_to_node_dict[output_])
+      if output_ in self.tensor_down_to_node_dict:
+        results.extend(self.tensor_down_to_node_dict[output_])
     return results
 
   def topological_sort(self):
@@ -88,3 +90,11 @@ class Graph:
 
     # return list in reverse order.
     return stack[::-1]
+
+  def export(self):
+    node_name_list = self.topological_sort()
+    node_list = [self.node_dict[n_name] for n_name in node_name_list]
+    new_graph_proto = helper.make_graph(node_list, self.graph.name,
+                                        self.graph.input, self.graph.output,
+                                        self.graph.initializer)
+    return new_graph_proto

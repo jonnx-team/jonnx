@@ -2,7 +2,6 @@
 import dataclasses
 from typing import Dict, List
 
-from absl import logging
 from absl.testing import absltest
 from jonnx.ops import module
 

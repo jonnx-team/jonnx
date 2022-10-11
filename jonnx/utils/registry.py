@@ -186,7 +186,7 @@ class Registry(object):
       return decorator(value=key_or_value, key=None)
     else:
       return lambda value: decorator(value, key=key_or_value)
-    
+
   def deregister(self, key=None):
     if key not in self:
       raise KeyError("%s is in registry table, can not deregister it" % (key))

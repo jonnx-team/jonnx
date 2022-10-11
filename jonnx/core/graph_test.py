@@ -80,6 +80,11 @@ class GraphTest(absltest.TestCase):
     expect_node_list = ["node5", "node4", "node2", "node3", "node1", "node0"]
     self.assertCountEqual(node_list, expect_node_list)
 
+  def test_export(self):
+    g = graph.Graph(self.graph_proto)
+    new_graph_photo = g.export()
+    print(new_graph_photo)
+
 
 if __name__ == "__main__":
   absltest.main()

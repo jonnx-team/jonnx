@@ -1,16 +1,22 @@
 """Create the JAX based ONNX Backend."""
+from typing import Any
+
 import jax
+from jonnx.core import Graph
 from jonnx.utils import registry
 import onnx
+from onnx import helper
+from onnx import ModelProto
 from onnx import numpy_helper
 from onnx.backend.base import Backend
+from onnx.backend.base import BackendRep
 
 
 def _asarray(proto):
   return numpy_helper.to_array(proto).reshape(tuple(proto.dims))
 
 
-attr_types = dict(onnx.AttributeProto.AttributeType.items())
+attr_types = dict(onnx.AttributeProto.AttributeType.items())  # type: ignore
 attribute_handlers = {
     attr_types['FLOAT']: lambda a: a.f,
     attr_types['INT']: lambda a: a.i,
@@ -23,12 +29,21 @@ attribute_handlers = {
 }
 
 
-class JaxBackend(Backend):
-  """Jax Backend demo for ONNX."""
+class JaxBackendRep(BackendRep):
+  """the handle that preparing to execut a model repeatedly.
 
-  @classmethod
-  def run_model(cls, model, inputs, device='CPU', **kwargs):
-    """Single API run_model."""
+  Users will then pass inputs to the run function of
+  BackendRep to retrieve the corresponding results.
+  """
+
+  def __init__(self, model=None):
+    super(JaxBackendRep, self).__init__()
+    g = Graph(model.graph)
+    new_graph_proto = g.export()
+    self.model = helper.make_model(new_graph_proto)
+
+  def run(self, inputs, device='CPU', mode='jit', **kwargs):
+    """run the model."""
 
     # TODO(johnqiangzhang):  Add the reference count to release unused tensors.
     def jax_func(model, inputs):
@@ -44,8 +59,34 @@ class JaxBackend(Backend):
 
     mode = kwargs.get('mode', 'jit')
     print('running mode: ', mode)
-    predict = lambda inputs: jax_func(model, inputs)
+    predict = lambda inputs: jax_func(self.model, inputs)
     if mode == 'jit':
       predict = jax.jit(predict)
 
     return predict(inputs)
+
+
+class JaxBackend(Backend):
+  """Jax Backend demo for ONNX."""
+
+  @classmethod
+  def prepare(cls, model, device, **kwargs):
+    """Create the BackendRep obj."""
+    onnx.checker.check_model(model)
+    backend_rep = JaxBackendRep(model)
+    return backend_rep
+
+  @classmethod
+  def run_model(cls,
+                model: ModelProto,
+                inputs: Any,
+                device: str = 'CPU',
+                **kwargs: Any):
+    backend = cls.prepare(model, device, **kwargs)
+    assert backend is not None
+    return backend.run(inputs)
+
+  @classmethod
+  def supports_device(cls, device: str) -> bool:
+    """check which particular device support."""
+    return device in ('CPU', 'CUDA', 'TPU')
