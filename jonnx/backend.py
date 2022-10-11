@@ -52,13 +52,13 @@ class JaxBackendRep(BackendRep):
       for node in model.graph.node:
         args = (vals[name] for name in node.input)
         attrs = {a.name: attribute_handlers[a.type](a) for a in node.attribute}
-        outputs = registry.op(node.op_type)(*args, **attrs)
+        outputs = registry.op(node.op_type)(
+            *args, __output__=node.output, **attrs)
         for name, output in zip(node.output, outputs):
           vals[name] = output
       return [vals[n.name] for n in model.graph.output]
 
     mode = kwargs.get('mode', 'jit')
-    print('running mode: ', mode)
     predict = lambda inputs: jax_func(self.model, inputs)
     if mode == 'jit':
       predict = jax.jit(predict)
@@ -90,3 +90,6 @@ class JaxBackend(Backend):
   def supports_device(cls, device: str) -> bool:
     """check which particular device support."""
     return device in ('CPU', 'CUDA', 'TPU')
+
+
+run_model = JaxBackend.run_model
