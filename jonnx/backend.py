@@ -3,9 +3,7 @@ from typing import Any
 
 import jax
 from jonnx.core import graph
-from jonnx.utils import registry
 import onnx
-from onnx import helper
 from onnx import ModelProto
 from onnx import numpy_helper
 from onnx.backend.base import Backend
@@ -14,6 +12,7 @@ from onnx.backend.base import BackendRep
 
 def _asarray(proto):
   return numpy_helper.to_array(proto).reshape(tuple(proto.dims))
+
 
 class JaxBackendRep(BackendRep):
   """the handle that preparing to execut a model repeatedly.
@@ -24,32 +23,43 @@ class JaxBackendRep(BackendRep):
 
   def __init__(self, model=None):
     super(JaxBackendRep, self).__init__()
-    g = graph.Graph(model.graph)
-    new_graph_proto = g.export()
-    self.model = helper.make_model(new_graph_proto)
+    self.graph = graph.Graph(model.graph)
 
   def run(self, inputs, device='CPU', mode='jit', **kwargs):
     """run the model."""
+    node_list = self.graph.topological_sort()
+    ref_dict = self.graph.create_ref_dict()
 
     # TODO(johnqiangzhang):  Add the reference count to release unused tensors.
-    def jax_func(model, inputs):
-      vals = dict({n.name: a for n, a in zip(model.graph.input, inputs)},
-                  **{n.name: _asarray(n) for n in model.graph.initializer})
-      for node in model.graph.node:
-        args = (vals[name] for name in node.input)
-        attrs = {a.name: helper.get_attribute_value(a) for a in node.attribute}
-        outputs = registry.op(node.op_type)(
-            *args, __output__=node.output, **attrs)
-        for name, output in zip(node.output, outputs):
+    def jax_func(inputs):
+
+      vals = dict({name: a for name, a in zip(self.graph.input, inputs)},
+                  **self.graph.initializer_dict)
+
+      for nd_name in node_list:
+        node_op = self.graph.node_dict[nd_name]
+        args = (vals[name] for name in node_op.input)
+        outputs = node_op(*args)
+        for name, output in zip(node_op.output, outputs):
           vals[name] = output
-      return [vals[n.name] for n in model.graph.output]
+        for name in node_op.input:
+          if name in ref_dict:
+            if ref_dict[name] > 1:
+              ref_dict[name] -= 1
+            else:
+              del ref_dict[name]
+              del vals[name]
+      return [vals[name] for name in self.graph.output]
 
     mode = kwargs.get('mode', 'jit')
-    predict = lambda inputs: jax_func(self.model, inputs)
-    if mode == 'jit':
-      predict = jax.jit(predict)
+    # pylint: disable=unnecessary-lambda
+    predict = lambda inputs: jax_func(inputs)
 
-    return predict(inputs)
+    if mode == 'return_jax_func_only':
+      return predict
+    elif mode == 'jit':
+      predict = jax.jit(predict)
+      return predict(inputs)
 
 
 class JaxBackend(Backend):
@@ -69,8 +79,7 @@ class JaxBackend(Backend):
                 device: str = 'CPU',
                 **kwargs: Any):
     backend = cls.prepare(model, device, **kwargs)
-    assert backend is not None
-    return backend.run(inputs)
+    return backend.run(inputs, **kwargs)
 
   @classmethod
   def supports_device(cls, device: str) -> bool:

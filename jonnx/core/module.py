@@ -259,7 +259,7 @@ class Module(metaclass=_ModuleMeta):
     for name, value in zip(static_field_names, static_field_values):
       object.__setattr__(self, name, value)
     return self
-  
+
   def __eq__(self, other):
     return tree_equal(self, other)
 

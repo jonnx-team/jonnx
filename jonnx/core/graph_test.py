@@ -13,37 +13,37 @@ class GraphTest(absltest.TestCase):
     graph_inputs = ["input"]
 
     node0 = helper.make_node(
-        op_type="A",
+        op_type="Abs",
         inputs=["node5_output", "node4_output"],
         outputs=[],
         name="node0")
 
     node1 = helper.make_node(
-        op_type="A",
+        op_type="Abs",
         inputs=["node3_output", "node4_output"],
         outputs=[],
         name="node1")
 
     node2 = helper.make_node(
-        op_type="A",
+        op_type="Abs",
         inputs=["node5_output"],
         outputs=["node2_output"],
         name="node2")
 
     node3 = helper.make_node(
-        op_type="A",
+        op_type="Abs",
         inputs=["node2_output"],
         outputs=["node3_output"],
         name="node3")
 
     node4 = helper.make_node(
-        op_type="A",
+        op_type="Abs",
         inputs=graph_inputs,
         outputs=["node4_output"],
         name="node4")
 
     node5 = helper.make_node(
-        op_type="A",
+        op_type="Abs",
         inputs=graph_inputs,
         outputs=["node5_output"],
         name="node5")
@@ -58,8 +58,6 @@ class GraphTest(absltest.TestCase):
 
   def test_init(self):
     g = graph.Graph(self.graph_proto)
-    logging.info("g ref_dict = %s", g.ref_dict)
-    logging.info("g tensor_dict = %s", g.tensor_dict)
     logging.info("g node_dict = %s", g.node_dict)
     self.assertIs(len(g.node_dict), 6)
 
@@ -79,11 +77,6 @@ class GraphTest(absltest.TestCase):
     logging.info("node_list = %s", node_list)
     expect_node_list = ["node5", "node4", "node2", "node3", "node1", "node0"]
     self.assertCountEqual(node_list, expect_node_list)
-
-  def test_export(self):
-    g = graph.Graph(self.graph_proto)
-    new_graph_photo = g.export()
-    print(new_graph_photo)
 
 
 if __name__ == "__main__":

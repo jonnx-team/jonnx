@@ -1,16 +1,18 @@
 """Tests for backend."""
-
 from absl.testing import absltest
 from jax import numpy as jnp
 from jonnx.backend import JaxBackend
+from jonnx.core import node
 from jonnx.utils import registry
 import numpy as np
 import onnx
 
 
 @registry.register_op('Relu')
-def relu(x, **kwargs):
-  return [jnp.maximum(x, 0)]
+class Relu(node.Node):
+
+  def __call__(self, x):
+    return [jnp.maximum(x, 0)]
 
 
 class BackendTest(absltest.TestCase):
@@ -51,7 +53,7 @@ class BackendTest(absltest.TestCase):
     onnx.checker.check_model(model_def)
     return model_def
 
-  def test_give_me_a_name(self):
+  def test_single_relu_model(self):
     model = self._create_dummy_model()
     inputs = np.random.randint(-10, 10, [10, 3, 32, 32])
     outputs = JaxBackend.run_model(model, inputs)

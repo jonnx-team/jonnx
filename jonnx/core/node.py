@@ -27,4 +27,9 @@ class Node(module.Module):
     self.attribute = {
         a.name: helper.get_attribute_value(a) for a in node_proto.attribute
     }
-    self.doc_string = node_proto.doc_string  
+    self.doc_string = node_proto.doc_string
+
+  def __call__(self, *args, **kwargs):
+    classname = self.__class__.__name__
+    raise RuntimeError(f"{classname} class forget implement __call__.")
+  

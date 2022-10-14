@@ -1,73 +1,114 @@
 """Define Graph class."""
-from typing import Dict, Text, List
+from typing import Any, Sequence, Dict, Text, List, Optional
 
+from jonnx.core import module
+from jonnx.core import node
+from jonnx.core import tensor
+from jonnx.core import valueinfo
+from jonnx.utils import registry
 from onnx import GraphProto
-from onnx import helper
+
+static_field = module.static_field
 
 
-class Graph:
+class Graph(module.Module):
   """Graph class wrapper of ONNX.GraphProto."""
+  node_dict: Dict[str, node.Node]
+  initializer_dict: Dict[str, tensor.Tensor]
+  name: Optional[str] = static_field()
+  doc_string: Optional[str] = static_field()
+  input: Sequence[str] = static_field()
+  output: Sequence[str] = static_field()
+  # Change value_info into dict and include both input and output
+  value_info_dict: Dict[str, valueinfo.ValueInfoProto] = static_field()
+  metadata: Any
 
   def __init__(self, graph_proto: GraphProto):
-    self.graph = graph_proto
-
-    # Build the ref_dict
-    self.ref_dict = {}
-    for node in self.graph.node:
-      inputs = node.input
-      for input_ in inputs:
-        if input_ in self.ref_dict:
-          self.ref_dict[input_] += 1
-        else:
-          self.ref_dict[input_] = 1
-
-    # Initialze the tensor_dict
-    self.tensor_dict = {}
-    for n in self.graph.initializer:
-      self.tensor_dict[n.name] = n
-
-    # Build the node_dict
     self.node_dict = {}
-    for node in self.graph.node:
-      self.node_dict[node.name] = node
+    for nd in graph_proto.node:
+      self.node_dict[nd.name] = registry.op(nd.op_type)(nd)
+    self.initializer_dict = {
+        ts.name: tensor.Tensor(ts) for ts in graph_proto.initializer
+    }
+    self.input = [proto.name for proto in graph_proto.input]
+    self.output = [proto.name for proto in graph_proto.output]
+    self.doc_string = graph_proto.doc_string
+    self.name = graph_proto.name
+    self.value_info_dict = {
+        **{
+            proto.name: valueinfo.ValueInfo(proto)
+            for proto in graph_proto.input
+        },
+        **{
+            proto.name: valueinfo.ValueInfo(proto)
+            for proto in graph_proto.output
+        },
+        **{
+            proto.name: valueinfo.ValueInfo(proto)
+            for proto in graph_proto.value_info
+        },
+    }
+    self.create_tensor_and_node_dict()
 
+  def create_ref_dict(self) -> Dict[str, int]:
+    """Create reference counting dict."""
+    ref_dict = {}
+    for _, nd in self.node_dict.items():
+      inputs = nd.input
+      for input_ in inputs:
+        if input_ in ref_dict:
+          ref_dict[input_] += 1
+        else:
+          ref_dict[input_] = 1
+    return ref_dict
+
+  def create_tensor_and_node_dict(self):
     # Build the tensor_to_node_dict
-    self.tensor_down_to_node_dict: Dict[Text, List[Text]] = {}
-    self.tensor_up_to_node_dict: Dict[Text, Text] = {}
-    for node in self.graph.node:
-
-      inputs = node.input
+    tensor_down_to_node_dict: Dict[Text, List[Text]] = {}
+    tensor_up_to_node_dict: Dict[Text, Text] = {}
+    for nd_name, nd in self.node_dict.items():
+      inputs = nd.input
       for input_name in inputs:
-        if input_name not in self.tensor_down_to_node_dict:
-          self.tensor_down_to_node_dict[input_name] = []
-        self.tensor_down_to_node_dict[input_name].append(node.name)
+        if input_name not in tensor_down_to_node_dict:
+          tensor_down_to_node_dict[input_name] = []
+        tensor_down_to_node_dict[input_name].append(nd_name)
 
-      outputs = node.output
+      outputs = nd.output
       for output_name in outputs:
-        self.tensor_up_to_node_dict[output_name] = node.name
+        tensor_up_to_node_dict[output_name] = nd_name
 
     # Build the node_to_tensor_dict
-    self.node_down_to_tensor_dict: Dict[Text, List[Text]] = {}
-    self.node_up_to_tensor_dict: Dict[Text, List[Text]] = {}
-    for node in self.graph.node:
-      outputs_name = [o for o in node.output]
-      self.node_down_to_tensor_dict[node.name] = outputs_name
-      inputs_name = [i for i in node.input]
-      self.node_up_to_tensor_dict[node.name] = inputs_name
+    node_down_to_tensor_dict: Dict[Text, List[Text]] = {}
+    node_up_to_tensor_dict: Dict[Text, List[Text]] = {}
+    for nd_name, nd in self.node_dict.items():
+      outputs_name = [o for o in nd.output]
+      node_down_to_tensor_dict[nd_name] = outputs_name
+      inputs_name = [i for i in nd.input]
+      node_up_to_tensor_dict[nd_name] = inputs_name
+
+    self.metadata = {}
+    self.metadata['tensor_down_to_node_dict'] = tensor_down_to_node_dict
+    self.metadata['tensor_up_to_node_dict'] = tensor_up_to_node_dict
+    self.metadata['node_down_to_tensor_dict'] = node_down_to_tensor_dict
+    self.metadata['node_up_to_tensor_dict'] = node_up_to_tensor_dict
 
   def get_parent_nodes_name(self, node_name: Text) -> List[Text]:
-    inputs = self.node_up_to_tensor_dict[node_name]
+    node_up_to_tensor_dict = self.metadata['node_up_to_tensor_dict']
+    tensor_up_to_node_dict = self.metadata['tensor_up_to_node_dict']
+    inputs = node_up_to_tensor_dict[node_name]
     results = []
     for input_ in inputs:
-      results.append(self.tensor_up_to_node_dict[input_])
+      results.append(tensor_up_to_node_dict[input_])
     return results
 
   def get_child_nodes_name(self, node_name: Text) -> List[Text]:
-    outputs = self.node_down_to_tensor_dict[node_name]
+    node_down_to_tensor_dict = self.metadata['node_down_to_tensor_dict']
+    tensor_down_to_node_dict = self.metadata['tensor_down_to_node_dict']
+    outputs = node_down_to_tensor_dict[node_name]
     results = []
     for output_ in outputs:
-      if output_ in self.tensor_down_to_node_dict:
-        results.extend(self.tensor_down_to_node_dict[output_])
+      if output_ in tensor_down_to_node_dict:
+        results.extend(tensor_down_to_node_dict[output_])
     return results
 
   def topological_sort(self):
@@ -90,11 +131,3 @@ class Graph:
 
     # return list in reverse order.
     return stack[::-1]
-
-  def export(self):
-    node_name_list = self.topological_sort()
-    node_list = [self.node_dict[n_name] for n_name in node_name_list]
-    new_graph_proto = helper.make_graph(node_list, self.graph.name,
-                                        self.graph.input, self.graph.output,
-                                        self.graph.initializer)
-    return new_graph_proto
