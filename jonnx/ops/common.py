@@ -1,32 +1,43 @@
 """Those simple ONNX ops."""
 from jax import lax
 from jax import numpy as jnp
+from jonnx.core import node
 from jonnx.utils import registry
-import numpy as np
+from onnx import numpy_helper
 
 
 @registry.register_op('Abs')
-def onnx_abs(x, **kwargs):
-  return [lax.abs(x)]
+class Abs(node.Node):
+
+  def __call__(self, x):
+    return [lax.abs(x)]
 
 
 @registry.register_op('Acos')
-def onnx_acos(x, **kwargs):
-  return [lax.acos(x)]
+class Acos(node.Node):
+
+  def __call__(self, x):
+    return [lax.acos(x)]
 
 
 @registry.register_op('Acosh')
-def onnx_acosh(x, **kwargs):
-  return [lax.acosh(x)]
+class Acosh(node.Node):
+
+  def __call__(self, x):
+    return [lax.acosh(x)]
 
 
 @registry.register_op('Constant')
-def onnx_constant(**kwargs):
-  output_name = kwargs['__output__'][0]
-  assert output_name in kwargs, f'{output_name}, kwargs key = {kwargs.keys()}'
-  return [kwargs[output_name]]
+class Constant(node.Node):
+
+  def __call__(self):
+    output_name = self.output[0]
+    tensor_proto = self.attribute[output_name]
+    return [numpy_helper.to_array(tensor_proto)]
 
 
 @registry.register_op('MatMul')
-def onnx_matmul(x, y, **kwargs):
-  return [jnp.matmul(x, y)]
+class MatMul(node.Node):
+
+  def __call__(self, x, y):
+    return [jnp.matmul(x, y)]
