@@ -21,6 +21,7 @@ class Graph(module.Module):
   output: Sequence[str] = static_field()
   # Change value_info into dict and include both input and output
   value_info_dict: Dict[str, valueinfo.ValueInfoProto] = static_field()
+  # extra info beside ONNX Protobuf
   metadata: Any
 
   def __init__(self, graph_proto: GraphProto):
@@ -28,7 +29,7 @@ class Graph(module.Module):
     for nd in graph_proto.node:
       self.node_dict[nd.name] = registry.op(nd.op_type)(nd)
     self.initializer_dict = {
-        ts.name: tensor.Tensor(ts) for ts in graph_proto.initializer
+        ts.name: tensor.Tensor.from_proto()(ts) for ts in graph_proto.initializer
     }
     self.input = [proto.name for proto in graph_proto.input]
     self.output = [proto.name for proto in graph_proto.output]
@@ -48,6 +49,7 @@ class Graph(module.Module):
             for proto in graph_proto.value_info
         },
     }
+    self.metadata = {}
     self.create_tensor_and_node_dict()
 
   def create_ref_dict(self) -> Dict[str, int]:
@@ -86,7 +88,6 @@ class Graph(module.Module):
       inputs_name = [i for i in nd.input]
       node_up_to_tensor_dict[nd_name] = inputs_name
 
-    self.metadata = {}
     self.metadata['tensor_down_to_node_dict'] = tensor_down_to_node_dict
     self.metadata['tensor_up_to_node_dict'] = tensor_up_to_node_dict
     self.metadata['node_down_to_tensor_dict'] = node_down_to_tensor_dict
@@ -131,3 +132,4 @@ class Graph(module.Module):
 
     # return list in reverse order.
     return stack[::-1]
+    

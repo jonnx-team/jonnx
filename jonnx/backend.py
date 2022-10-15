@@ -24,43 +24,42 @@ class JaxBackendRep(BackendRep):
   def __init__(self, model=None):
     super(JaxBackendRep, self).__init__()
     self.graph = graph.Graph(model.graph)
-
-  def run(self, inputs, device='CPU', mode='jit', **kwargs):
-    """run the model."""
+    
     node_list = self.graph.topological_sort()
     ref_dict = self.graph.create_ref_dict()
-
-    # TODO(johnqiangzhang):  Add the reference count to release unused tensors.
-    def jax_func(inputs):
-
-      vals = dict({name: a for name, a in zip(self.graph.input, inputs)},
-                  **self.graph.initializer_dict)
-
+    
+    def jax_func(params, inputs):
+      tensor_dict = dict(
+        {name: a for name, a in zip(self.graph.input, inputs)},
+        **params
+      )
+      
       for nd_name in node_list:
         node_op = self.graph.node_dict[nd_name]
-        args = (vals[name] for name in node_op.input)
+        args = (tensor_dict[name] for name in node_op.input)
         outputs = node_op(*args)
         for name, output in zip(node_op.output, outputs):
-          vals[name] = output
+          if name not in tensor_dict:
+            tensor_dict[name] = output
         for name in node_op.input:
           if name in ref_dict:
             if ref_dict[name] > 1:
               ref_dict[name] -= 1
             else:
               del ref_dict[name]
-              del vals[name]
-      return [vals[name] for name in self.graph.output]
+              del tensor_dict[name]
+      return [tensor_dict[name] for name in self.graph.output]
+    
+    self.jax_func =jax_func    
 
-    mode = kwargs.get('mode', 'jit')
-    # pylint: disable=unnecessary-lambda
-    predict = lambda inputs: jax_func(inputs)
-
-    if mode == 'return_jax_func_only':
-      return predict
-    elif mode == 'jit':
-      predict = jax.jit(predict)
-      return predict(inputs)
-
+  def run(self, inputs, device='CPU', mode='jit', **kwargs):
+    """run the model."""
+    params = self.graph.initializer_dict
+    if "static_args" in kwargs:
+      params.update(kwargs['static_args'])
+    jax_func = self.jax_func
+    predict = jax.jit(jax_func)
+    return predict(params, inputs)
 
 class JaxBackend(Backend):
   """Jax Backend demo for ONNX."""

@@ -4,13 +4,14 @@ import numpy as np
 import onnx
 from onnx import TensorProto
 
-static_field = module.static_field
-
 
 class Tensor(module.Module):
-  name: str = static_field()
+  name: str
   value: np.ndarray
 
-  def __init__(self, tensor_proto: TensorProto):
-    self.name = tensor_proto.name
-    self.value = onnx.numpy_helper.to_array(tensor_proto)
+  @classmethod
+  def from_proto(cls, tensor_proto: TensorProto):
+    name = tensor_proto.name
+    value = onnx.numpy_helper.to_array(tensor_proto)
+    return cls(name, value)
+
