@@ -9,9 +9,7 @@ from jonnx.core import tensor
 from jonnx.utils import registry
 
 
-# TODO(https://github.com/jonnx-team/jonnx/issues/2):  static_argnums shape compplain miss hash function.
-# Only jit.disable_jit work for this op.
-# @registry.register_op('Reshape')
+@registry.register_op('Reshape')
 class Reshape(node.Node):
 
   @partial(jit, static_argnums=(2))

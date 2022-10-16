@@ -52,13 +52,12 @@ class JaxBackendRep(BackendRep):
     
     self.jax_func =jax_func    
 
-  def run(self, inputs, device='CPU', mode='jit', **kwargs):
+  def run(self, inputs, device='CPU',  **kwargs):
     """run the model."""
     params = self.graph.initializer_dict
     if "static_args" in kwargs:
       params.update(kwargs['static_args'])
-    jax_func = self.jax_func
-    predict = jax.jit(jax_func)
+    predict = self.jax_func
     return predict(params, inputs)
 
 class JaxBackend(Backend):
