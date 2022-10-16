@@ -21,12 +21,12 @@ class NodeTest(absltest.TestCase):
     )
 
   def test_basic(self):
-    node_obj = node.Node(self.node_proto)
+    node_obj = node.Node.from_proto(self.node_proto)
     self.assertEqual(node_obj.op_type, "Conv")
     self.assertEqual(node_obj.name, "")
 
   def test_pytree(self):
-    node_obj = node.Node(self.node_proto)
+    node_obj = node.Node.from_proto(self.node_proto)
     value_flat, value_tree = tree_flatten(node_obj)
     new_node_obj = tree_unflatten(value_tree, value_flat)
     self.assertEqual(node_obj, new_node_obj)

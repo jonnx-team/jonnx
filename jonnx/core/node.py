@@ -18,18 +18,26 @@ class Node(module.Module):
   attribute: Dict[str, Any] = static_field()
   doc_string: Optional[str] = static_field()
 
-  def __init__(self, node_proto: NodeProto):
-    self.input = node_proto.input
-    self.output = node_proto.output
-    self.name = node_proto.name
-    self.op_type = node_proto.op_type
-    self.domain = node_proto.domain
-    self.attribute = {
+  @classmethod
+  def from_proto(cls, node_proto: NodeProto):
+    input_ = node_proto.input
+    output_ = node_proto.output
+    name_ = node_proto.name
+    op_type_ = node_proto.op_type
+    domain_ = node_proto.domain
+    attribute_ = {
         a.name: helper.get_attribute_value(a) for a in node_proto.attribute
     }
-    self.doc_string = node_proto.doc_string
+    doc_string_ = node_proto.doc_string
+    return cls(
+        input=input_,
+        output=output_,
+        name=name_,
+        op_type=op_type_,
+        domain=domain_,
+        attribute=attribute_,
+        doc_string=doc_string_)
 
   def __call__(self, *args, **kwargs):
     classname = self.__class__.__name__
     raise RuntimeError(f"{classname} class forget implement __call__.")
-  

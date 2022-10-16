@@ -27,7 +27,8 @@ class Graph(module.Module):
   def __init__(self, graph_proto: GraphProto):
     self.node_dict = {}
     for nd in graph_proto.node:
-      self.node_dict[nd.name] = registry.op(nd.op_type)(nd)
+      op_class = registry.op(nd.op_type)
+      self.node_dict[nd.name] = op_class.from_proto(nd)
     self.initializer_dict = {
         ts.name: tensor.Tensor.from_proto()(ts) for ts in graph_proto.initializer
     }
