@@ -12,6 +12,5 @@ from jonnx.utils import registry
 @registry.register_op('Reshape')
 class Reshape(node.Node):
 
-  @partial(jit, static_argnums=(2))
   def __call__(self, x, shape):
-    return [jnp.reshape(x, shape)]
+    return [jnp.reshape(x, tuple(shape))]

@@ -1,6 +1,7 @@
 """ONNX Conv ops."""
 from typing import Sequence, Tuple
 
+import jax
 from jax import lax
 from jonnx.core import node
 from jonnx.utils import registry
@@ -34,6 +35,7 @@ class Conv(node.Node):
     print('result = %s', result)
     return result
 
+  @jax.jit
   def __call__(self, x, w, b=0):
     group = self.attribute.get('group', 1)
     assert group == 1
