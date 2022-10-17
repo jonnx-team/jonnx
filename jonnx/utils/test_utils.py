@@ -32,7 +32,7 @@ def cosin_sim(a, b):
   return cos_sim
 
 
-def expect(self,
+def expect(
     node_op: onnx.NodeProto,
     inputs: Sequence[np.ndarray],
     outputs: Sequence[np.ndarray],
@@ -48,6 +48,10 @@ def expect(self,
   atol = testcase.atol
   rtol = testcase.rtol
   outputs_jax = run_model(model, inputs)
-  
-  self.assertCountEqual(list(outputs[0].shape), list(outputs_jax[0].shape))
-  self.assertAllClose(outputs, outputs_jax, rtol=rtol, atol=atol)
+
+  test_case = jtu.JaxTestCase()
+  test_case.assertCountEqual(
+      list(outputs[0].shape), list(outputs_jax[0].shape),
+      f"expect shape {list(outputs[0].shape)} but get {list(outputs_jax[0].shape)}"
+  )
+  test_case.assertAllClose(outputs, outputs_jax, rtol=rtol, atol=atol)

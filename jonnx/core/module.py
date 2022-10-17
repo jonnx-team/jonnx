@@ -278,3 +278,16 @@ def module_update_wrapper(wrapper: Module, wrapped) -> Module:
   finally:
     object.__setattr__(wrapper, "__class__", cls)
   return wrapper
+
+def enable_rewrite(func):
+  
+    def inner(self, *args, **kwargs):
+      cls = self.__class__
+      initable_cls = module._make_initable(cls, wraps=True)
+      object.__setattr__(self, "__class__", initable_cls)
+      try:
+        func(self, *args, **kwargs)
+      finally:
+        object.__setattr__(self, "__class__", cls)
+    
+    return inner

@@ -39,7 +39,6 @@ class ConvOpTest(jtu.JaxTestCase):
         [72.0, 111.0, 117.0, 123.0, 84.0],
     ]]]).astype(np.float32)
     expect(
-        self,
         node_with_padding,
         inputs=[x, W],
         outputs=[y_with_padding],
@@ -60,7 +59,6 @@ class ConvOpTest(jtu.JaxTestCase):
         [144.0, 153.0, 162.0],
     ]]]).astype(np.float32)
     expect(
-        self,
         node_without_padding,
         inputs=[x, W],
         outputs=[y_without_padding],
@@ -103,7 +101,6 @@ class ConvOpTest(jtu.JaxTestCase):
         [112.0, 177.0, 124.0],
     ]]]).astype(np.float32)
     expect(
-        self,
         node_with_padding,
         inputs=[x, W],
         outputs=[y_with_padding],
@@ -128,7 +125,6 @@ class ConvOpTest(jtu.JaxTestCase):
         [234.0, 252.0],
     ]]]).astype(np.float32)
     expect(
-        self,
         node_without_padding,
         inputs=[x, W],
         outputs=[y_without_padding],
@@ -155,7 +151,6 @@ class ConvOpTest(jtu.JaxTestCase):
         [171.0, 183.0],
     ]]]).astype(np.float32)
     expect(
-        self,
         node_with_asymmetric_padding,
         inputs=[x, W],
         outputs=[y_with_asymmetric_padding],
@@ -188,12 +183,7 @@ class ConvOpTest(jtu.JaxTestCase):
     )
     y = np.array([[[[12.0, 27.0, 24.0], [63.0, 108.0, 81.0],
                     [72.0, 117.0, 84.0]]]]).astype(np.float32)
-    expect(
-        self,
-        node,
-        inputs=[x, W],
-        outputs=[y],
-        name="test_conv_with_autopad_same")
+    expect(node, inputs=[x, W], outputs=[y], name="test_conv_with_autopad_same")
 
 
 if __name__ == "__main__":

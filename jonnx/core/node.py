@@ -1,8 +1,8 @@
 """Wrap NodeProto as Node class."""
 from typing import Sequence, Optional, Any, Dict
 
+import jonnx
 from jonnx.core import module
-from onnx import helper
 from onnx import NodeProto
 
 static_field = module.static_field
@@ -20,15 +20,16 @@ class Node(module.Module):
 
   @classmethod
   def from_proto(cls, node_proto: NodeProto):
-    input_ = node_proto.input
-    output_ = node_proto.output
-    name_ = node_proto.name
-    op_type_ = node_proto.op_type
-    domain_ = node_proto.domain
+    input_ = list(node_proto.input)
+    output_ = list(node_proto.output)
+    name_ = str(node_proto.name)
+    op_type_ = str(node_proto.op_type)
+    domain_ = str(node_proto.domain)
     attribute_ = {
-        a.name: helper.get_attribute_value(a) for a in node_proto.attribute
+        a.name: jonnx.utils.helper.get_attribute_value(a)
+        for a in node_proto.attribute
     }
-    doc_string_ = node_proto.doc_string
+    doc_string_ = str(node_proto.doc_string)
     return cls(
         input=input_,
         output=output_,
@@ -40,4 +41,8 @@ class Node(module.Module):
 
   def __call__(self, *args, **kwargs):
     classname = self.__class__.__name__
-    raise RuntimeError(f"{classname} class forget implement __call__.")
+    raise RuntimeError(f'{classname} class forget implement __call__.')
+
+  def __post_init__(self):
+    if not self.op_type:
+      raise ValueError('op_type not set.')

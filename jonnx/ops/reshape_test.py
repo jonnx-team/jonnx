@@ -1,4 +1,4 @@
-"""Test ReShape ops."""
+"""Test Reshape ops."""
 from absl.testing import absltest
 from jax._src import test_util as jtu
 from jonnx.utils.test_utils import expect
@@ -42,12 +42,12 @@ class ReshapeTest(jtu.JaxTestCase):
       reshaped = reshape_reference_implementation(data, shape)
 
       expect(
-          self,
           node,
           inputs=[data, shape],
           outputs=[reshaped],
           name="test_reshape_" + test_name,
       )
+
 
 if __name__ == "__main__":
   absltest.main()
