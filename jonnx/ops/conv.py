@@ -6,12 +6,35 @@ import jax
 from jax import lax
 from jonnx.core import node
 from jonnx.utils import registry
-from jonnx.utils.ops_utils import convert_onnx_pad_to_jax_pad
 
 
 @registry.register_op('Conv')
 class Conv(node.Node):
   """Conv class."""
+
+  @classmethod
+  def convert_onnx_pad_to_jax_pad(cls, pads) -> Sequence[Tuple[int, int]]:
+    """ONNX Pads convention is [x1_begin, x2_begin,..., x1_end, x2_end,...].
+
+    While JAX pads convention is ([(x1_begin, x1_end), (x2_begin, x2_end),..]
+
+    Args:
+      pads: ONNX conversion pads.
+
+    Returns:
+      result: JAX convention pads.
+    """
+    if not pads:
+      return pads
+    assert isinstance(pads, Sequence)
+    length = len(pads)
+    assert length % 2 == 0
+    print('pads = %s', pads)
+    result = []
+    for i in range(length // 2):
+      result.append((pads[i], pads[i + length // 2]))
+    print('result = %s', result)
+    return result
 
   @partial(jax.jit, static_argnames={'self'})
   def __call__(self, x, w, b=0):
@@ -26,7 +49,7 @@ class Conv(node.Node):
     pads = self.convert_onnx_pad_to_jax_pad(pads)
     dilations = self.attribute.get('dilations', None)
     if auto_pad and auto_pad != 'NOTSET':
-      auto_pad = 'SAME' if auto_pad.startswith(b'SAME') else 'VALID'
+      auto_pad = 'SAME' if auto_pad.startswith('SAME') else 'VALID'
       pads = lax.padtype_to_pads(x.shape[2:], w.shape[2:], strides, auto_pad)
     else:
       pads = pads or [0] * (w.ndim - 2)

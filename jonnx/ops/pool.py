@@ -8,7 +8,6 @@ from jax import lax
 from jonnx.core import module
 from jonnx.core import node
 from jonnx.utils import registry
-from jonnx.utils.ops_utils import convert_onnx_pad_to_jax_pad
 
 
 def pad_helper(input_rank, pads=None):
