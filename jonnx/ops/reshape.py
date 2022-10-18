@@ -12,5 +12,8 @@ from jonnx.utils import registry
 @registry.register_op('Reshape')
 class Reshape(node.Node):
 
-  def __call__(self, x, shape):
+  def __call__(self, x, shape = None):
+    if not shape:
+      shape = self.attribute.get('shape', None)
+    assert shape, "shape is None."
     return [jnp.reshape(x, tuple(shape))]

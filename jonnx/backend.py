@@ -1,5 +1,5 @@
 """Create the JAX based ONNX Backend."""
-from typing import Any
+from typing import Any, List
 
 import jax
 from jonnx.core import graph
@@ -73,7 +73,7 @@ class JaxBackend(Backend):
   @classmethod
   def run_model(cls,
                 model: ModelProto,
-                inputs: Any,
+                inputs: List[Any],
                 device: str = 'CPU',
                 **kwargs: Any):
     backend = cls.prepare(model, device, **kwargs)

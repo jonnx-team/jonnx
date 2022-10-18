@@ -194,8 +194,8 @@ class Registry(object):
 
   def __getitem__(self, key):
     if key not in self:
-      raise KeyError("%s never registered with registry %s. Available:\n %s" %
-                     (key, self.name, display_list_by_prefix(sorted(self), 4)))
+      raise KeyError("%s never registered with registry %s." %
+                     (key, self.name))
     value = self._registry[key]
     return self._value_transformer(key, value)
 
@@ -206,10 +206,10 @@ class Registry(object):
     return self._registry.keys()
 
   def values(self):
-    return (self[k] for k in self)  # complicated because of transformer
+    return (self[k] for k in self)
 
   def items(self):
-    return ((k, self[k]) for k in self)  # complicated because of transformer
+    return ((k, self[k]) for k in self)
 
   def __iter__(self):
     return iter(self._registry)
