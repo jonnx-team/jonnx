@@ -1,14 +1,16 @@
 """Test utility functions."""
+import hashlib
+import io
 from typing import Any, Sequence
+import urllib.request
 
-from absl import logging
 import jax
+from jax._src import test_util as jtu
 import jax.numpy as jnp
+from jonnx.backend import run_model
 import numpy as np
 import onnx
 import onnx.backend.test.case.node as backend_test_case_node
-from jonnx.backend import run_model
-from jax._src import test_util as jtu
 
 random_key = jax.random.PRNGKey(0)
 
@@ -55,3 +57,14 @@ def expect(
       f"expect shape {list(outputs[0].shape)} but get {list(outputs_jax[0].shape)}"
   )
   test_case.assertAllClose(outputs, outputs_jax, rtol=rtol, atol=atol)
+
+
+def load_model_from_url(url, md5sum=None):
+  download = urllib.request.urlopen(url).read()
+  download_file_md5sum = hashlib.md5(download).hexdigest()
+  if download_file_md5sum != md5sum:
+    raise RuntimeError("onnx file checksum mismatch,"
+                       f"download file {download_file_md5sum}"
+                       f"expect {md5sum}.")
+  model = onnx.load(io.BytesIO(download))
+  return model
