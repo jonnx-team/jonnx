@@ -9,6 +9,8 @@ from jonnx.core import node
 from jonnx.utils import registry
 
 logger = logging.getLogger(__name__)
+
+
 @registry.register_op('Conv')
 class Conv(node.Node):
   """Conv class."""
@@ -52,7 +54,6 @@ class Conv(node.Node):
       pads = pads or [0] * (w.ndim - 2)
     lhs_dilation = [1] * (w.ndim - 2)
     rhs_dilation = dilations or [1] * (w.ndim - 2)
-    result = lax.conv_general_dilated(
-        x, w, strides, pads, lhs_dilation, rhs_dilation, None, group, 1
-    ) + b
+    result = lax.conv_general_dilated(x, w, strides, pads, lhs_dilation,
+                                      rhs_dilation, None, group, 1) + b
     return [result]

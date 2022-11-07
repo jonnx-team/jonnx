@@ -10,11 +10,9 @@ from onnx import numpy_helper
 from onnx import NodeProto
 
 
-
 @registry.register_op('Abs')
 class Abs(node.Node):
 
-  @jax.jit
   def __call__(self, x):
     return [lax.abs(x)]
 
@@ -22,7 +20,6 @@ class Abs(node.Node):
 @registry.register_op('Acos')
 class Acos(node.Node):
 
-  @jax.jit
   def __call__(self, x):
     return [lax.acos(x)]
 
@@ -30,14 +27,13 @@ class Acos(node.Node):
 @registry.register_op('Acosh')
 class Acosh(node.Node):
 
-  @jax.jit
   def __call__(self, x):
     return [lax.acosh(x)]
 
 
 @registry.register_op('Constant')
 class Constant(node.Node):
- 
+
   def __call__(self):
     output_name = self.output[0]
     # TODO: only support 'value' currently
@@ -51,14 +47,13 @@ class Constant(node.Node):
 @registry.register_op('MatMul')
 class MatMul(node.Node):
 
-  @jax.jit
   def __call__(self, x, y):
     return [jnp.matmul(x, y)]
-  
+
+
 @registry.register_op('Add')
 class Add(node.Node):
-  
-  @jax.jit
+
   def __call__(self, a, b):
     """Numpy-backed implementation of ONNX Add op."""
     axis = self.attribute.get('axis', None)
@@ -71,9 +66,9 @@ class Add(node.Node):
       b = jnp.reshape(b, b_shape)
     return [a + b]
 
+
 @registry.register_op('Relu')
 class Relu(node.Node):
-  
-  @jax.jit
+
   def __call__(self, x):
     return [jnp.maximum(x, 0)]

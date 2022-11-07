@@ -5,4 +5,3 @@ from . import conv
 from . import pool
 from . import batchnorm
 from . import global_average_pool
-

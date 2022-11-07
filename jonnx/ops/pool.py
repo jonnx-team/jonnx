@@ -24,7 +24,6 @@ def pad_helper(input_rank, pads=None):
 @registry.register_op('MaxPool')
 class MaxPool(node.Node):
 
-  @partial(jax.jit, static_argnames={'self'})
   def __call__(self, x):
     pads = self.attribute.get('pads', None)
     auto_pad = self.attribute.get('auto_pad', 'NOTSET')

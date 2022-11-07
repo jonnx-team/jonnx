@@ -12,9 +12,7 @@ from jonnx.utils import registry
 
 @registry.register_op('BatchNormalization')
 class BatchNormalization(node.Node):
-  
-  
-  @partial(jax.jit, static_argnames={'self'})
+
   def __call__(self, x, s, bias, mean, var):
     epsilon = self.attribute.get('epsilon', 1e-5)
     dims_x = len(x.shape)
@@ -25,4 +23,3 @@ class BatchNormalization(node.Node):
     var = var.reshape(-1, *dim_ones)
     ot = s * (x - mean) / lax.sqrt(var + epsilon) + bias
     return [ot]
-
