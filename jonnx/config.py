@@ -13,13 +13,12 @@ class Config(jax_config.Config):
   def parse_flags_with_absl(self):
     global already_configured_with_absl
     if not already_configured_with_absl:
-      # Extract just the --jonnx... flags (before the first --) from argv. In some
+      # Extract just the --jonnx... flags (before the first --) from argv.
+      # In some
       # environments (e.g. ipython/colab) argv might be a mess of things
       # parseable by absl and other junk.
       jonnx_argv = itertools.takewhile(lambda a: a != '--', sys.argv)
-      jonnx_argv = [
-          '', *(a for a in jonnx_argv if a.startswith('--jonnx_'))
-      ]
+      jonnx_argv = ['', *(a for a in jonnx_argv if a.startswith('--jonnx_'))]
 
       import absl.flags  # pylint: disable=g-import-not-at-top
       self.config_with_absl()

@@ -1,4 +1,4 @@
-"""ONNX Conv ops."""
+"""ONNX Pool ops."""
 from functools import partial
 from typing import Sequence, Tuple
 

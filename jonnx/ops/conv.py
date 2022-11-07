@@ -1,4 +1,5 @@
 """ONNX Conv ops."""
+import logging
 from functools import partial
 from typing import Sequence, Tuple
 
@@ -7,7 +8,7 @@ from jax import lax
 from jonnx.core import node
 from jonnx.utils import registry
 
-
+logger = logging.getLogger(__name__)
 @registry.register_op('Conv')
 class Conv(node.Node):
   """Conv class."""
@@ -29,17 +30,13 @@ class Conv(node.Node):
     assert isinstance(pads, Sequence)
     length = len(pads)
     assert length % 2 == 0
-    print('pads = %s', pads)
     result = []
     for i in range(length // 2):
       result.append((pads[i], pads[i + length // 2]))
-    print('result = %s', result)
     return result
 
-  @partial(jax.jit, static_argnames={'self'})
   def __call__(self, x, w, b=0):
     group = self.attribute.get('group', 1)
-    assert group == 1
     kernel_shape = self.attribute.get('kernel_shape', None)
     kernel_shape = kernel_shape or w.shape
     strides = self.attribute.get('strides', None)
@@ -55,7 +52,7 @@ class Conv(node.Node):
       pads = pads or [0] * (w.ndim - 2)
     lhs_dilation = [1] * (w.ndim - 2)
     rhs_dilation = dilations or [1] * (w.ndim - 2)
-    return [
-        lax.conv_with_general_padding(x, w, strides, pads, lhs_dilation,
-                                      rhs_dilation) + b
-    ]
+    result = lax.conv_general_dilated(
+        x, w, strides, pads, lhs_dilation, rhs_dilation, None, group, 1
+    ) + b
+    return [result]

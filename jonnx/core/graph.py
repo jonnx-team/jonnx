@@ -30,7 +30,7 @@ class Graph(module.Module):
       op_class = registry.op(nd.op_type)
       self.node_dict[nd.name] = op_class.from_proto(nd)
     self.initializer_dict = {
-        ts.name: tensor.Tensor.from_proto()(ts) for ts in graph_proto.initializer
+        ts.name: tensor.Tensor.from_proto(ts).value for ts in graph_proto.initializer
     }
     self.input = [proto.name for proto in graph_proto.input]
     self.output = [proto.name for proto in graph_proto.output]

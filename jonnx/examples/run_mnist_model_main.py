@@ -11,12 +11,12 @@ from jonnx.utils import test_utils
 from jonnx import backend
 
 
-mnist_url = ('https://github.com/onnx/models/blob/'
+url = ('https://github.com/onnx/models/blob/'
                     '81c4779096d1205edd0b809e191a924c58c38fef/'
                     'mnist/model.onnx?raw=true')
-mnist_md5sum = 'bc8ad9bd19c5a058055dc18d0f089dad'
-flags.DEFINE_string('url', mnist_url, 'onnx model url')
-flags.DEFINE_string('md5sum', mnist_md5sum, "expected md5sum to verify it.")
+md5sum = 'bc8ad9bd19c5a058055dc18d0f089dad'
+flags.DEFINE_string('url', url, 'onnx model url')
+flags.DEFINE_string('md5sum', md5sum, "expected md5sum to verify it.")
 
 
 FLAGS = flags.FLAGS

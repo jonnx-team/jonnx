@@ -62,7 +62,7 @@ def expect(
 def load_model_from_url(url, md5sum=None):
   download = urllib.request.urlopen(url).read()
   download_file_md5sum = hashlib.md5(download).hexdigest()
-  if download_file_md5sum != md5sum:
+  if md5sum and download_file_md5sum != md5sum:
     raise RuntimeError("onnx file checksum mismatch,"
                        f"download file {download_file_md5sum}"
                        f"expect {md5sum}.")

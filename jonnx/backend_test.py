@@ -8,7 +8,7 @@ import numpy as np
 import onnx
 
 
-@registry.register_op('Relu')
+@registry.register_op('_Relu')
 class Relu(node.Node):
 
   def __call__(self, x):
